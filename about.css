@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+/* Scroll fluide */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Corps de page */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(90deg, #ffffff, #8d8aa5);
+    color: #1a1a1a; 
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Header fixe */
+header {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 20px;
+    position: fixed;      
+    top: 0;                
+    left: 0;
+    width: 100%;          
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 1000;         
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+}
+
+/* Sections pleine page pour About.html */
+section {
+    min-height: 100vh;          /* occupe toute la hauteur de l’écran */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 100px 20px 20px 20px; /* espace pour header fixe */
+}
