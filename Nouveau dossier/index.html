@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musique - Recherche Chanson 🎵</title>
+<style>
+body { font-family: Arial; background:#0d253f; color:#fff; margin:0; padding:20px; }
+h1 { text-align:center; margin-bottom:20px; }
+form { text-align:center; margin-bottom:20px; }
+input, button { padding:10px; margin:5px; border-radius:5px; border:none; }
+button { background:#01b4e4; color:#fff; cursor:pointer; }
+.results { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+.song { background:#1e3a5f; border-radius:10px; padding:10px; text-align:center; transition:0.2s; }
+.song:hover { transform:scale(1.03); }
+iframe, audio { width:100%; border-radius:8px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<h1>🎵 Recherche Musique</h1>
+
+<form id="searchForm">
+  <input type="text" id="searchInput" placeholder="Titre ou artiste...">
+  <button type="submit">Rechercher</button>
+</form>
+
+<div class="results" id="results"></div>
+
+<script>
+const apiKey = 'AIzaSyCbbm32vduhX-p7yOpVFdw5BPoFfmGuDA0';
+
+document.getElementById('searchForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if(query) searchSong(query);
+});
+
+function formatTitleForMP3(title){
+  return title.replace(/\s+/g,'').replace(/[^a-zA-Z0-9]/g,'');
+}
+
+async function searchSong(query){
+  const resDiv = document.getElementById('results');
+  resDiv.innerHTML = "<p>Chargement...</p>";
+  const fileName = formatTitleForMP3(query) + ".mp3";
+
+  // Vérifier si le fichier MP3 local existe
+  const mp3Path = `musique/${fileName}`;
+  fetch(mp3Path, { method: 'HEAD' })
+    .then(res => {
+      resDiv.innerHTML = '';
+      if(res.ok){
+        // MP3 trouvé → lecteur audio
+        const div = document.createElement('div');
+        div.classList.add('song');
+        div.innerHTML = `
+          <h3>${query} (MP3 local)</h3>
+          <audio controls>
+            <source src="${mp3Path}" type="audio/mpeg">
+            Musique non disponible.
+          </audio>
+        `;
+        resDiv.appendChild(div);
+      } else {
+        // MP3 non trouvé → rechercher sur YouTube
+        searchYouTube(query);
+      }
+    }).catch(err => {
+      resDiv.innerHTML = "<p>Erreur lors de la vérification MP3.</p>";
+      console.error(err);
+    });
+}
+
+async function searchYouTube(query){
+  const resDiv = document.getElementById('results');
+  try{
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=5&q=${encodeURIComponent(query)}&key=${apiKey}`);
+    const data = await res.json();
+
+    if(!data.items || data.items.length === 0){
+      resDiv.innerHTML = "<p>Aucune vidéo trouvée.</p>";
+      return;
+    }
+
+    data.items.forEach(item => {
+      const videoId = item.id.videoId;
+      const title = item.snippet.title;
+      const channel = item.snippet.channelTitle;
+
+      const div = document.createElement('div');
+      div.classList.add('song');
+      div.innerHTML = `
+        <h3>${title}</h3>
+        <p>Artiste: ${channel}</p>
+        <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+      `;
+      resDiv.appendChild(div);
+    });
+  }catch(e){
+    resDiv.innerHTML = "<p>Erreur lors de la recherche YouTube.</p>";
+    console.error(e);
+  }
+}
+</script>
+
+</body>
+</html>

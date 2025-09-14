@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musique Anime - Saisons & Openings 🎵</title>
+<style>
+  body { font-family: Arial; background:#0d253f; color:#fff; margin:0; padding:20px; }
+  h1 { text-align:center; margin-bottom:20px; }
+  form { text-align:center; margin-bottom:20px; }
+  input, button { padding:10px; margin:5px; border-radius:5px; border:none; }
+  button { background:#01b4e4; color:#fff; cursor:pointer; }
+  .categories { text-align:center; margin-bottom:20px; }
+  .results { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px; }
+  .anime { background:#1e3a5f; border-radius:10px; padding:10px; text-align:center; transition:0.2s; }
+  .anime:hover { transform:scale(1.03); }
+  .anime img { max-width:100%; border-radius:10px; }
+  .anime h3 { margin:10px 0 5px; }
+  .season { text-align:left; margin-top:8px; background:#163a5f; padding:10px; border-radius:8px; }
+  audio { width:100%; margin-top:5px; border-radius:5px; }
+</style>
+</head>
+<body>
+
+<h1>🎵 Musique Anime - Saisons & Openings</h1>
+
+<form id="searchForm">
+  <input type="text" id="searchInput" placeholder="Rechercher un anime...">
+  <button type="submit">Rechercher</button>
+</form>
+
+<div class="categories">
+  <button onclick="getPopular()">Animes populaires</button>
+  <button onclick="getByGenre(1)">Action</button>
+  <button onclick="getByGenre(8)">Drame</button>
+  <button onclick="getByGenre(22)">Romance</button>
+  <button onclick="getByGenre(23)">School Life</button>
+  <button onclick="getByGenre(10)">Shonen</button>
+  <button onclick="getByGenre(4)">Comédie</button>
+</div>
+
+<div class="results" id="results"></div>
+
+<script>
+// Recherche anime
+document.getElementById('searchForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  const query = document.getElementById('searchInput').value.trim();
+  if(query) searchAnime(query);
+});
+
+// Format titre pour MP3
+function formatTitleForMP3(title){
+  return title.replace(/\s+/g,'').replace(/[^a-zA-Z0-9]/g,''); 
+}
+
+function addAllOpeningsEndings(container, seasonTitle, maxOP = 50){
+  const animeName = formatTitleForMP3(seasonTitle);
+
+  container.innerHTML = `<h4>${seasonTitle}</h4>`;
+
+  for(let i=1; i<=maxOP; i++){
+    const opSrc = `musique/${animeName}_OP${i}.mp3`;
+    const edSrc = `musique/${animeName}_ED${i}.mp3`;
+
+    // Opening
+    const opDiv = document.createElement('div');
+    opDiv.innerHTML = `
+      <p>Opening ${i}:</p>
+      <audio controls>
+        <source src="${opSrc}" type="audio/mpeg">
+        Musique non disponible.
+      </audio>
+    `;
+    container.appendChild(opDiv);
+
+    // Ending
+    const edDiv = document.createElement('div');
+    edDiv.innerHTML = `
+      <p>Ending ${i}:</p>
+      <audio controls>
+        <source src="${edSrc}" type="audio/mpeg">
+        Musique non disponible.
+      </audio>
+    `;
+    container.appendChild(edDiv);
+  }
+}
+
+
+// Ajouter lecteurs audio OP/ED
+function addSeasonAudio(container, seasonTitle){
+  const fileName = formatTitleForMP3(seasonTitle);
+  const opSrc = `musique/${fileName}_OP1.mp3`;
+  const edSrc = `musique/${fileName}_ED1.mp3`;
+
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <h4>${seasonTitle}</h4>
+    <p>Opening:</p>
+    <audio controls>
+      <source src="${opSrc}" type="audio/mpeg">
+      Musique non disponible.
+    </audio>
+    <p>Ending:</p>
+    <audio controls>
+      <source src="${edSrc}" type="audio/mpeg">
+      Musique non disponible.
+    </audio>
+  `;
+  container.appendChild(div);
+}
+
+// Affichage animes
+function displayAnime(animes){
+  const resDiv = document.getElementById('results');
+  resDiv.innerHTML = '';
+  
+  if(!animes || animes.length===0){
+    resDiv.innerHTML = "<p>Aucun anime trouvé.</p>";
+    return;
+  }
+
+  animes.forEach(anime => {
+    const img = anime.images.jpg.image_url || 'https://via.placeholder.com/220x330?text=Pas+d%27image';
+    const div = document.createElement('div');
+    div.classList.add('anime');
+    div.innerHTML = `
+      <img src="${img}" alt="${anime.title}">
+      <h3>${anime.title}</h3>
+      <p>Score: ${anime.score || 'N/A'}</p>
+      <p>Type: ${anime.type || 'N/A'}</p>
+      <button onclick="getSeasons(${anime.mal_id}, '${anime.title}')">Voir saisons & musiques</button>
+      <div class="season" id="season-${anime.mal_id}"></div>
+    `;
+    resDiv.appendChild(div);
+  });
+}
+
+// Recherche anime via Jikan API
+async function searchAnime(query){
+  const resDiv = document.getElementById('results');
+  resDiv.innerHTML="<p>Chargement...</p>";
+  try{
+    const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(query)}&limit=10`);
+    const data = await res.json();
+    displayAnime(data.data);
+  }catch(e){
+    resDiv.innerHTML="<p>Erreur lors de la recherche.</p>";
+    console.error(e);
+  }
+}
+
+// Filtrer par genre
+async function getByGenre(genreId){
+  const resDiv = document.getElementById('results');
+  resDiv.innerHTML="<p>Chargement...</p>";
+  try{
+    const res = await fetch(`https://api.jikan.moe/v4/anime?genres=${genreId}&order_by=popularity&limit=10`);
+    const data = await res.json();
+    displayAnime(data.data);
+  }catch(e){
+    resDiv.innerHTML="<p>Erreur lors du chargement.</p>";
+    console.error(e);
+  }
+}
+
+// Animes populaires
+async function getPopular(){
+  const resDiv = document.getElementById('results');
+  resDiv.innerHTML="<p>Chargement...</p>";
+  try{
+    const res = await fetch(`https://api.jikan.moe/v4/top/anime`);
+    const data = await res.json();
+    displayAnime(data.data.slice(0,10));
+  }catch(e){
+    resDiv.innerHTML="<p>Erreur lors du chargement.</p>";
+    console.error(e);
+  }
+}
+
+// Voir saisons et lecteurs audio
+async function getSeasons(mal_id, title){
+  const seasonDiv = document.querySelector(`#season-${mal_id}`);
+  seasonDiv.innerHTML="<p>Chargement des saisons...</p>";
+
+  try{
+    const res = await fetch(`https://api.jikan.moe/v4/anime/${mal_id}/relations`);
+    const data = await res.json();
+    const related = data.data;
+    
+    seasonDiv.innerHTML = '';
+
+    // Anime actuel comme Saison 1
+    addSeasonAudio(seasonDiv, title);
+
+    // Parcourir les saisons liées (suite, spin-off)
+    related.forEach(rel => {
+      if(rel.relation.includes("Sequel") || rel.relation.includes("Side story")){
+        rel.entry.forEach(s => {
+          addSeasonAudio(seasonDiv, s.name);
+        });
+      }
+    });
+
+  }catch(e){
+    seasonDiv.innerHTML="<p>Erreur lors du chargement des saisons.</p>";
+    console.error(e);
+  }
+}
+</script>
+
+</body>
+</html>
